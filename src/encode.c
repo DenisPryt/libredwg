@@ -141,7 +141,7 @@ static bool env_var_checked_p;
 #define FIELD_3DPOINT(name,dxf) FIELD_3BD(name,dxf)
 #define FIELD_4BITS(name,dxf) bit_write_4BITS(dat,_obj->name);
 #define FIELD_TIMEBLL(name,dxf) \
-  { bit_write_TIMEBLL(dat, (BITCODE_TIMEBLL)_obj->name); \
+  { bit_write_TIMEBLL(dat, /*(BITCODE_TIMEBLL)*/_obj->name); \
     LOG_TRACE(#name ": " FORMAT_BL "." FORMAT_BL "\n", _obj->name.days, _obj->name.ms); }
 
 #define FIELD_CMC(name,dxf1,dxf2) bit_write_CMC(dat, &_obj->name)
@@ -660,7 +660,7 @@ dwg_encode(Dwg_Data *restrict dwg, Bit_Chain *restrict dat)
     Dwg_Object *obj = NULL;
     struct Dwg_R2004_Header* _obj = &dwg->r2004_header;
     const int size = sizeof(struct Dwg_R2004_Header);
-    char encrypted_data[size];
+    char encrypted_data[sizeof(struct Dwg_R2004_Header)];
     unsigned int rseed = 1;
 
     LOG_ERROR(WE_CAN "We don't encode the R2004_section_map yet")

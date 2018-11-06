@@ -2067,6 +2067,7 @@ read_2004_section_handles(Bit_Chain* dat, Dwg_Data *dwg)
 
       section_size = bit_read_RS_LE(&hdl_dat);
       LOG_TRACE("\nSection size: %u\n", section_size);
+	  
 	  /* *********************************************************************************************
       ** https://www.opendesign.com/files/guestdownloads/OpenDesign_Specification_for_.dwg_files.pdf
       ** page 251 "Note that each section is cut off at a maximum length of 2032."
@@ -2140,7 +2141,7 @@ decode_R2004(Bit_Chain* dat, Dwg_Data * dwg)
     struct Dwg_R2004_Header* _obj = &dwg->r2004_header;
     Bit_Chain* hdl_dat = dat;
     const unsigned size = sizeof(struct Dwg_R2004_Header);
-    char encrypted_data[size];
+    char encrypted_data[sizeof(struct Dwg_R2004_Header)];
     unsigned int rseed = 1;
     unsigned i;
 

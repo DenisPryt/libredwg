@@ -56,6 +56,13 @@ gcov.log
 /test/test-data-20*/
 /unknown-*.log
 /fuzz-*/
+/VSBuild/.vs
+/VSBuild/.vs
+/VSBuild/Win32/
+/VSBuild/x64/
+/VSBuild/*/*.vcxproj.user
+/VSBuild/*/Win32/
+/VSBuild/*/x64/
 
 # specific filenames
 /libredwg.pc

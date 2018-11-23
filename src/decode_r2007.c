@@ -157,7 +157,7 @@ static void copy_bytes(char *dst, uint32_t length, uint32_t offset);
 static uint32_t read_literal_length(unsigned char **src, unsigned char opcode);
 static void copy_compressed_bytes(char *restrict dst, char *restrict src, int length);
 static void  bfr_read(void *restrict dst, char **restrict src, size_t size);
-static DWGCHAR* bfr_read_string(char **src, int64_t stringSize);
+static DWGCHAR* bfr_read_string(char **src, int64_t size);
 static char* decode_rs(const char *src, int block_count, int data_size);
 static int  decompress_r2007(char *restrict dst, int dst_size,
                              char *restrict src, int src_size);
@@ -659,6 +659,7 @@ read_data_page(Bit_Chain* dat, unsigned char *decomp, int64_t page_size,
     memcpy(decomp, pedata, size_uncomp);
 
   free(pedata);
+  free(rsdata);
 
   return error;
 }
@@ -735,17 +736,16 @@ bfr_read(void *restrict dst, char **restrict src, size_t size)
 }
 
 static DWGCHAR*
-bfr_read_string(char **src, int64_t stringSize)
+bfr_read_string(char **src, int64_t size)
 {
-  if (stringSize <= 0)
-    return NULL;
-
   uint16_t *ptr = (uint16_t*)*src;
   int32_t length = 0, wsize;
   DWGCHAR *str, *str_base;
   int i;
 
-  while (*ptr != 0 && length * 2 < stringSize)
+  if (size <= 0)
+    return NULL;
+  while (*ptr != 0 && length * 2 < size)
     {
       ptr++;
       length++;
@@ -765,7 +765,7 @@ bfr_read_string(char **src, int64_t stringSize)
       *str++ = (DWGCHAR)(*ptr++);
     }
 
-  *src += stringSize;
+  *src += size;
   *str = 0;
 
   return str_base;

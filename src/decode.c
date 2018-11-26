@@ -72,8 +72,8 @@ decode_preR13_section_chk(Dwg_Section_Type_r11 id, Bit_Chain* dat,
 static int
 decode_preR13_section(Dwg_Section_Type_r11 id, Bit_Chain* dat, Dwg_Data * dwg);
 static int
-decode_preR13_entities(unsigned long start, unsigned long end, unsigned long offset,
-                       Bit_Chain* dat, Dwg_Data * dwg);
+decode_preR13_entities(unsigned long start, unsigned long end,
+                       unsigned long offset, Bit_Chain* dat, Dwg_Data * dwg);
 
 static int
 decode_preR13(Bit_Chain* dat, Dwg_Data * dwg);
@@ -294,6 +294,7 @@ decode_preR13_section(Dwg_Section_Type_r11 id, Bit_Chain* dat, Dwg_Data * dwg)
   obj->tio.object->tio.name = _obj;                                     \
   obj->tio.object->objid = obj->index;                                  \
   obj->parent = dwg;                                                    \
+  obj->dxfname = (char*)#name;                                          \
   LOG_TRACE("\n-- table entry " #name " [%d]:\n", i)
 
 #define CHK_ENDPOS \
@@ -1421,7 +1422,7 @@ decompress_R2004_section(Bit_Chain *restrict dat, char *restrict decomp,
           else
             lit_length = read_literal_length(dat, &opcode1);
         }
-      else if (opcode1 >= 0x21 && opcode1 <= 0x3F)
+      else if (opcode1 >= 0x21 && opcode1 <= 0x3F) // lgtm [cpp/constant-comparison]
         {
           comp_bytes  = opcode1 - 0x1E;
           comp_offset = read_two_byte_offset(dat, &lit_length);
@@ -2277,13 +2278,15 @@ decode_R2007(Bit_Chain* dat, Dwg_Data * dwg)
  * Private functions
  */
 
-static int 
-dwg_decode_eed_data(Bit_Chain * dat, Dwg_Eed_Data* data, unsigned long int end)
+static int
+dwg_decode_eed_data(Bit_Chain * dat, Dwg_Eed_Data* data, unsigned long int end, BITCODE_BS size)
 {
   int lenc;
   BITCODE_BS j;
   BITCODE_RS lens;
-  unsigned long int size = MIN(end, dat->size) - dat->byte;
+
+  data->code = bit_read_RC(dat);
+  LOG_TRACE("code: %d ", (int)data->code);
 
   switch (data->code)
     {
@@ -2291,9 +2294,9 @@ dwg_decode_eed_data(Bit_Chain * dat, Dwg_Eed_Data* data, unsigned long int end)
       PRE(R_2007) {
         data->u.eed_0.length = lenc = bit_read_RC(dat);
         data->u.eed_0.codepage = bit_read_RS_LE(dat);
-        if (lenc > size-4)
+        if ((long)lenc > size-4)
           {
-            LOG_ERROR("Invalid EED string len %d, max %d", lenc, size-4);
+            LOG_ERROR("Invalid EED string len %d, max %ld", lenc, size-4)
             dat->byte = end;
             break;
 #if 0
@@ -2346,7 +2349,7 @@ dwg_decode_eed_data(Bit_Chain * dat, Dwg_Eed_Data* data, unsigned long int end)
         data->u.eed_10.point.x = bit_read_RD(dat);
         data->u.eed_10.point.y = bit_read_RD(dat);
         data->u.eed_10.point.z = bit_read_RD(dat);
-        LOG_TRACE("3dpoint: %f, %f, %f\n", 
+        LOG_TRACE("3dpoint: %f, %f, %f\n",
                   data->u.eed_10.point.x,
                   data->u.eed_10.point.y,
                   data->u.eed_10.point.z);
@@ -2370,6 +2373,14 @@ dwg_decode_eed_data(Bit_Chain * dat, Dwg_Eed_Data* data, unsigned long int end)
         return DWG_ERR_INVALIDTYPE; /* may continue */
       }
 
+#ifdef DEBUG
+  // sanity checks
+  if (obj->eed[idx].code == 0 || obj->eed[idx].code == 4)
+    assert(obj->eed[idx].data->u.eed_0.length <= size - 1);
+  if (obj->eed[idx].code == 10) // 3 double
+    assert(size >= 1 + 3 * 8);
+#endif
+
   return 0;
 }
 
@@ -2389,7 +2400,6 @@ dwg_decode_eed(Bit_Chain * dat, Dwg_Object_Object * obj)
     {
       int i;
       BITCODE_BS j;
-      BITCODE_RC code = 0;
       long unsigned int end, offset;
       long unsigned int sav_byte;
       Dwg_Object *_obj = &dwg->object[obj->objid];
@@ -2410,14 +2420,14 @@ dwg_decode_eed(Bit_Chain * dat, Dwg_Object_Object * obj)
       }
       obj->eed[idx].size = size;
       error |= bit_read_H(dat, &obj->eed[idx].handle);
-	  end = dat->byte + size;
+      end = dat->byte + size;
       if (error) {
         LOG_ERROR("No EED[%d].handle", idx);
         obj->num_eed = 0;
         free(obj->eed);
         obj->eed = NULL;
-		dat->byte = end; // skip eed
-		continue; // continue for size = bit_read_BS(dat)
+        dat->byte = end; // skip eed
+        continue; // continue for size = bit_read_BS(dat)
       } else {
         LOG_TRACE("EED[%u] handle: %d.%d.%lX\n", idx,
                   obj->eed[idx].handle.code, obj->eed[idx].handle.size,
@@ -2436,7 +2446,8 @@ dwg_decode_eed(Bit_Chain * dat, Dwg_Object_Object * obj)
                 // search absref in APPID_CONTROL apps[]
                 for (j=0; j < appid->num_entries; j++)
                   {
-                    if ( appid->apps[j] && appid->apps[j]->absolute_ref == ref.absolute_ref )
+                    if (appid->apps[j] &&
+                        appid->apps[j]->absolute_ref == ref.absolute_ref)
                       {
                         Dwg_Object_MLEADERSTYLE *this = obj->tio.MLEADERSTYLE;
                         this->is_new_format = 1;
@@ -2456,19 +2467,9 @@ dwg_decode_eed(Bit_Chain * dat, Dwg_Object_Object * obj)
       while (dat->byte < end)
         {
           obj->eed[idx].data = (Dwg_Eed_Data*)calloc(size + 8, 1);
-          obj->eed[idx].data->code = code = bit_read_RC(dat);
-          LOG_TRACE("EED[%u] code: %d\n", idx, (int)code);
-		  LOG_TRACE("EED[%u] ", idx);
+          LOG_TRACE("EED[%u] ", idx);
 
-		  error |= dwg_decode_eed_data(dat, obj->eed[idx].data, end);
-
-#ifdef DEBUG
-          // sanity checks
-          if (code == 0 || code == 4)
-            assert(obj->eed[idx].data->u.eed_0.length <= size-1);
-          if (code == 10) // 3 double
-            assert(size >= 1 + 3*8);
-#endif
+          error |= dwg_decode_eed_data(dat, obj->eed[idx].data, end, size);
 
           idx++;
           obj->num_eed++;
@@ -2482,7 +2483,7 @@ dwg_decode_eed(Bit_Chain * dat, Dwg_Object_Object * obj)
               obj->eed[idx].size = 0;
               obj->eed[idx].raw = NULL;
             }
-		  else 
+          else
             {
               break;
             }
@@ -2886,7 +2887,8 @@ dwg_decode_handleref(Bit_Chain *restrict dat, Dwg_Object *restrict obj,
  *   e ??
  */
 Dwg_Object_Ref *
-dwg_decode_handleref_with_code(Bit_Chain *restrict dat, Dwg_Object *restrict obj,
+dwg_decode_handleref_with_code(Bit_Chain *restrict dat,
+                               Dwg_Object *restrict obj,
                                Dwg_Data *restrict dwg, unsigned int code)
 {
   Dwg_Object_Ref* ref = (Dwg_Object_Ref *) calloc(1, sizeof(Dwg_Object_Ref));
@@ -2899,12 +2901,14 @@ dwg_decode_handleref_with_code(Bit_Chain *restrict dat, Dwg_Object *restrict obj
   if (bit_read_H(dat, &ref->handleref))
     {
       LOG_WARN("Invalid handleref: wanted code %d, got (%d.%d.%lX)",
-               code, ref->handleref.code, ref->handleref.size, ref->handleref.value)
+               code, ref->handleref.code, ref->handleref.size,
+               ref->handleref.value)
       free(ref);
       return NULL;
     }
 
-  // If the handle size is 0 and not a relative handle, it is probably a null handle.
+  // If the handle size is 0 and not a relative handle, it is probably
+  // a null handle.
   // It shouldn't be placed in the object ref vector.
   if (ref->handleref.size || (obj && ref->handleref.code > 5))
     {
@@ -2976,7 +2980,9 @@ dwg_decode_handleref_with_code(Bit_Chain *restrict dat, Dwg_Object *restrict obj
 }
 
 int
-dwg_decode_header_variables(Bit_Chain* dat, Bit_Chain* hdl_dat, Bit_Chain* str_dat,
+dwg_decode_header_variables(Bit_Chain* dat,
+                            Bit_Chain* hdl_dat,
+                            Bit_Chain* str_dat,
                             Dwg_Data *restrict dwg)
 {
   Dwg_Header_Variables* _obj = &dwg->header_vars;
@@ -3027,7 +3033,7 @@ get_base_value_type(short gc)
               if (gc <= 469) return VT_REAL;
               if (gc <= 479) return VT_STRING;
               if (gc <= 998) return VT_INVALID;
-              if (gc == 999) return VT_STRING; /* dead if */
+              if (gc == 999) return VT_STRING; // lgtm [cpp/constant-comparison]
             }
         }
       else // <440
@@ -3038,7 +3044,7 @@ get_base_value_type(short gc)
               if (gc <= 409) return VT_INT16;
               if (gc <= 419) return VT_STRING;
               if (gc <= 429) return VT_INT32;
-              if (gc <= 439) return VT_STRING; /* dead if */
+              if (gc <= 439) return VT_STRING; // lgtm [cpp/constant-comparison]
             }
           else            // 330-389
             {
@@ -3046,7 +3052,7 @@ get_base_value_type(short gc)
               if (gc <= 319) return VT_BINARY;
               if (gc <= 329) return VT_HANDLE;
               if (gc <= 369) return VT_OBJECTID;
-              if (gc <= 389) return VT_INT16; /* dead if */
+              if (gc <= 389) return VT_INT16; // lgtm [cpp/constant-comparison]
             }
         }
     }
@@ -3058,7 +3064,7 @@ get_base_value_type(short gc)
           if (gc <= 269) return VT_INVALID;
           if (gc <= 279) return VT_INT16;
           if (gc <= 289) return VT_INT8;
-          if (gc <= 299) return VT_BOOL; /* dead if */
+          if (gc <= 299) return VT_BOOL; // lgtm [cpp/constant-comparison]
         }
       else               // 105-209
         {
@@ -3067,7 +3073,7 @@ get_base_value_type(short gc)
           if (gc <= 149) return VT_REAL;
           if (gc <= 169) return VT_INVALID;
           if (gc <= 179) return VT_INT16;
-          if (gc <= 209) return VT_INVALID; /* dead if */
+          if (gc <= 209) return VT_INVALID; // lgtm [cpp/constant-comparison]
         }
     }
   else  // <105
@@ -3086,7 +3092,7 @@ get_base_value_type(short gc)
           if (gc <= 4)   return VT_STRING;
           if (gc == 5)   return VT_HANDLE;
           if (gc <= 9)   return VT_STRING;
-          if (gc <= 37)  return VT_POINT3D; /* dead if */
+          if (gc <= 37)  return VT_POINT3D; // lgtm [cpp/constant-comparison]
         }
     }
   return VT_INVALID;
@@ -3451,7 +3457,7 @@ dwg_decode_add_object(Dwg_Data *restrict dwg, Bit_Chain* dat, Bit_Chain* hdl_dat
   realloced = dwg_add_object(dwg);
   if (realloced > 0)
     return realloced; // i.e. DWG_ERR_OUTOFMEM
-  obj = &dwg->object[num];  
+  obj = &dwg->object[num];
   LOG_INFO("==========================================\n"
            "Object number: %lu/%lX", (unsigned long)num, (unsigned long)num)
 

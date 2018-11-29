@@ -26,6 +26,11 @@
 
 #if defined(_MSC_VER)
 # define restrict __restrict
+# if defined(_DEBUG)
+#  define _CRTDBG_MAP_ALLOC
+#  include <stdlib.h>
+#  include <crtdbg.h>
+# endif
 #endif
 
 /* for uint64_t, but not in swig */

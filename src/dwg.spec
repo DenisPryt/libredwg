@@ -1609,10 +1609,11 @@ static int decode_3dsolid(Bit_Chain* dat, Bit_Chain* hdl_dat,
        */
       else //if (FIELD_VALUE(version)==2)
         {
+          FIELD_VALUE(acis_data) = NULL;
           //TODO string in strhdl, even <r2007
           FIELD_VALUE(num_blocks) = 2;
-          FIELD_VALUE(block_size) = malloc(2 * sizeof (BITCODE_RL));
-          FIELD_VALUE(encr_sat_data) = malloc(2 * sizeof (char*));
+          FIELD_VALUE(block_size) = calloc(2, sizeof (BITCODE_RL));
+          FIELD_VALUE(encr_sat_data) = calloc(2, sizeof (char*));
           FIELD_TF (encr_sat_data[0], 15, 1); // "ACIS BinaryFile"
           FIELD_VALUE(block_size[0]) = 15;
           FIELD_RL (block_size[1], 0);
@@ -1716,17 +1717,38 @@ static int encode_3dsolid(Bit_Chain* dat, Bit_Chain* hdl_dat, Dwg_Object* obj,
 static void free_3dsolid(Dwg_Object* obj, Dwg_Entity_3DSOLID* _obj)
 {
   BITCODE_BL i;
-  BITCODE_BL vcount;
-  if (FIELD_VALUE(version) == 1)
+  BITCODE_BL vcount, rcount1, rcount2;
+
+  for (i=0; i < FIELD_VALUE(num_blocks); i++)
     {
-      for (i=0; i < FIELD_VALUE (num_blocks); i++)
-        {
-          FIELD_TF (encr_sat_data[i], block_size[i], 0);
-        }
-      free(_obj->encr_sat_data);
-      free(_obj->block_size);
-      free(_obj->acis_data);
+      FIELD_TF (encr_sat_data[i], block_size[i], 0);
     }
+  FREE_IF(FIELD_VALUE(encr_sat_data));
+  FREE_IF(FIELD_VALUE(block_size));
+  FREE_IF(FIELD_VALUE(acis_data));
+
+  REPEAT(num_wires, wires, Dwg_3DSOLID_wire)
+  {
+    PARSE_WIRE_STRUCT(wires[rcount1])
+  }
+  END_REPEAT(wires);
+
+  REPEAT(num_silhouettes, silhouettes, Dwg_3DSOLID_silhouette)
+  {
+    FIELD_BL (silhouettes[rcount1].vp_id, 0);
+    FIELD_3BD (silhouettes[rcount1].vp_target, 0);
+    FIELD_3BD (silhouettes[rcount1].vp_dir_from_target, 0);
+    FIELD_3BD (silhouettes[rcount1].vp_up_dir, 0);
+    FIELD_B (silhouettes[rcount1].vp_perspective, 0);
+    FIELD_BL (silhouettes[rcount1].num_wires, 0);
+    REPEAT2(silhouettes[rcount1].num_wires, silhouettes[rcount1].wires,
+            Dwg_3DSOLID_wire)
+      {
+        PARSE_WIRE_STRUCT(silhouettes[rcount1].wires[rcount2])
+      }
+    END_REPEAT(silhouettes[rcount1].wires);
+  }
+  END_REPEAT(silhouettes);
 }
 #undef FREE_3DSOLID
 #define FREE_3DSOLID free_3dsolid(obj, (Dwg_Entity_3DSOLID *)_obj)

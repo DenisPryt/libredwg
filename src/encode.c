@@ -1093,7 +1093,7 @@ dwg_encode(Dwg_Data *restrict dwg, Bit_Chain *restrict dat)
 }
 
 static int
-encode_preR13(Dwg_Data* dwg, Bit_Chain* dat)
+encode_preR13(Dwg_Data*restrict dwg, Bit_Chain*restrict dat)
 {
   return DWG_ERR_NOTYETSUPPORTED;
 }
@@ -1106,7 +1106,7 @@ encode_preR13(Dwg_Data* dwg, Bit_Chain* dat)
  * Returns 0 on success, else some Dwg_Error.
  */
 static int
-dwg_encode_variable_type(Dwg_Data* dwg, Bit_Chain* dat, Dwg_Object* obj)
+dwg_encode_variable_type(Dwg_Data*restrict dwg, Bit_Chain*restrict dat, Dwg_Object*restrict obj)
 {
   int i, error = 0;
   int is_entity;
@@ -1139,7 +1139,7 @@ dwg_encode_variable_type(Dwg_Data* dwg, Bit_Chain* dat, Dwg_Object* obj)
 }
 
 int
-dwg_encode_add_object(Dwg_Object* obj, Bit_Chain* dat,
+dwg_encode_add_object(Dwg_Object*restrict obj, Bit_Chain*restrict dat,
                       unsigned long address)
 {
   int error = 0;
@@ -1522,7 +1522,7 @@ static int dwg_encode_eed(Bit_Chain *restrict dat, Dwg_Object_Object *restrict e
    See DWG_SUPERTYPE_ENTITY in dwg_encode().
  */
 static int
-dwg_encode_entity(Dwg_Object* obj,
+dwg_encode_entity(Dwg_Object*restrict obj,
                   Bit_Chain* hdl_dat, Bit_Chain* str_dat, Bit_Chain* dat)
 {
   int error = 0;
@@ -1591,7 +1591,7 @@ dwg_encode_entity(Dwg_Object* obj,
 
 static int
 dwg_encode_common_entity_handle_data(Bit_Chain* dat, Bit_Chain* hdl_dat,
-                                     Dwg_Object* obj)
+                                     Dwg_Object*restrict obj)
 {
   Dwg_Object_Entity *ent;
   //Dwg_Data *dwg = obj->parent;
@@ -1607,7 +1607,7 @@ dwg_encode_common_entity_handle_data(Bit_Chain* dat, Bit_Chain* hdl_dat,
 }
 
 void
-dwg_encode_handleref(Bit_Chain* hdl_dat, Dwg_Object* obj, Dwg_Data* dwg, Dwg_Object_Ref* ref)
+dwg_encode_handleref(Bit_Chain* hdl_dat, Dwg_Object* obj, Dwg_Data*restrict dwg, Dwg_Object_Ref*restrict ref)
 {
   //this function should receive a Object_Ref without an abs_ref, calculate it and return a Dwg_Handle
   //this should be a higher level function 
@@ -1630,7 +1630,7 @@ dwg_encode_handleref(Bit_Chain* hdl_dat, Dwg_Object* obj, Dwg_Data* dwg, Dwg_Obj
  */
 void 
 dwg_encode_handleref_with_code(Bit_Chain* hdl_dat, Dwg_Object* obj, Dwg_Data* dwg,
-                               Dwg_Object_Ref* ref, unsigned int code)
+                               Dwg_Object_Ref*restrict ref, unsigned int code)
 {
   //XXX fixme. create the handle, then check the code. allow relative handle soft codes.
   dwg_encode_handleref(hdl_dat, obj, dwg, ref);
@@ -1673,8 +1673,8 @@ dwg_encode_handleref_with_code(Bit_Chain* hdl_dat, Dwg_Object* obj, Dwg_Data* dw
    See DWG_SUPERTYPE_OBJECT in dwg_encode().
 */
 static int
-dwg_encode_object(Dwg_Object* obj,
-                  Bit_Chain* hdl_dat, Bit_Chain* str_dat, Bit_Chain* dat)
+dwg_encode_object(Dwg_Object*restrict obj,
+                  Bit_Chain*restrict hdl_dat, Bit_Chain* str_dat, Bit_Chain* dat)
 {
   int error = 0;
   Dwg_Object_Object* ord = obj->tio.object;
@@ -1735,7 +1735,7 @@ dwg_encode_header_variables(Bit_Chain* dat, Bit_Chain* hdl_dat, Bit_Chain* str_d
 }
 
 static int
-dwg_encode_xdata(Bit_Chain* dat, Dwg_Object_XRECORD *obj, int size)
+dwg_encode_xdata(Bit_Chain*restrict dat, Dwg_Object_XRECORD *restrict obj, int size)
 {
   Dwg_Resbuf *tmp, *rbuf = obj->xdata;
   short type;

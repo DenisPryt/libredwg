@@ -65,13 +65,13 @@ static int
 resolve_objectref_vector(Bit_Chain* dat, Dwg_Data * dwg);
 
 static void
-decode_preR13_section_ptr(const char* name, Dwg_Section_Type_r11 id,
-                          Bit_Chain* dat, Dwg_Data * dwg);
+decode_preR13_section_ptr(const char*restrict name, Dwg_Section_Type_r11 id,
+                          Bit_Chain*restrict dat, Dwg_Data *restrict dwg);
 static void
-decode_preR13_section_chk(Dwg_Section_Type_r11 id, Bit_Chain* dat,
-                          Dwg_Data * dwg);
+decode_preR13_section_chk(Dwg_Section_Type_r11 id, Bit_Chain*restrict dat,
+                          Dwg_Data *restrict dwg);
 static int
-decode_preR13_section(Dwg_Section_Type_r11 id, Bit_Chain* dat, Dwg_Data * dwg);
+decode_preR13_section(Dwg_Section_Type_r11 id, Bit_Chain*restrict dat, Dwg_Data *restrict dwg);
 static int
 decode_preR13_entities(unsigned long start, unsigned long end,
                        unsigned long offset, Bit_Chain* dat, Dwg_Data * dwg);

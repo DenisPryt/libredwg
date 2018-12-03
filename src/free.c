@@ -201,6 +201,9 @@ static int dwg_free_UNKNOWN_OBJ (Bit_Chain *restrict dat, Dwg_Object *restrict o
 
 #define DWG_ENTITY(token) \
 static int \
+dwg_free_ ##token## _private (Bit_Chain *restrict _dat, Dwg_Object *restrict obj);\
+\
+static int \
 dwg_free_ ##token (Bit_Chain *restrict _dat, Dwg_Object *restrict obj)\
 { \
   int error;                \
@@ -233,6 +236,9 @@ dwg_free_ ##token## _private (Bit_Chain *restrict _dat, Dwg_Object *restrict obj
 }
 
 #define DWG_OBJECT(token) \
+static int \
+dwg_free_ ##token## _private (Bit_Chain *restrict _dat, Dwg_Object *restrict obj); \
+\
 static int \
 dwg_free_ ##token (Bit_Chain *restrict _dat, Dwg_Object *restrict obj) \
 { \
@@ -311,7 +317,7 @@ dwg_free_xdata(Dwg_Object_XRECORD *obj, int size)
   obj->xdata = NULL;
 }
 
-void
+EXPORT void
 dwg_free_eed(Dwg_Object* obj)
 {
   BITCODE_BL i;

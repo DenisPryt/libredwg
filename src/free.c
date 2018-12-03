@@ -124,7 +124,7 @@ static Bit_Chain *dat = &pdat;
 // it all in the vector called 'name'.
 #define FIELD_VECTOR_N(name, type, size, dxf) \
   if (size && _obj->name) { \
-    for (vcount=0; vcount < (BITCODE_BL)size; vcount++)  \
+    for (vcount=0; vcount < (BITCODE_BL)size; vcount++) \
       FIELD_##type(name[vcount], dxf); \
   } \
   FIELD_TV(name,dxf);
@@ -201,13 +201,13 @@ static int dwg_free_UNKNOWN_OBJ (Bit_Chain *restrict dat, Dwg_Object *restrict o
 
 #define DWG_ENTITY(token) \
 static int \
-dwg_free_ ##token## _private (Bit_Chain *restrict _dat, Dwg_Object *restrict obj);\
+dwg_free_ ##token## _private (Bit_Chain *restrict _dat, Dwg_Object *restrict obj); \
 \
 static int \
-dwg_free_ ##token (Bit_Chain *restrict _dat, Dwg_Object *restrict obj)\
+dwg_free_ ##token (Bit_Chain *restrict _dat, Dwg_Object *restrict obj) \
 { \
   int error;                \
-  LOG_HANDLE("Free entity " #token "\n")\
+  LOG_HANDLE("Free entity " #token "\n") \
   error = dwg_free_ ##token## _private(_dat, obj); \
                             \
   dwg_free_common_entity_data(obj); \
@@ -216,11 +216,10 @@ dwg_free_ ##token (Bit_Chain *restrict _dat, Dwg_Object *restrict obj)\
   FREE_IF(obj->tio.entity); \
   obj->parent = NULL;       \
   return error;             \
-}\
-\
+} \
 static int \
-dwg_free_ ##token## _private (Bit_Chain *restrict _dat, Dwg_Object *restrict obj)\
-{\
+dwg_free_ ##token## _private (Bit_Chain *restrict _dat, Dwg_Object *restrict obj) \
+{ \
   BITCODE_BL vcount, rcount1, rcount2, rcount3, rcount4;\
   Dwg_Entity_##token *ent, *_obj;\
   Dwg_Object_Entity *_ent;  \

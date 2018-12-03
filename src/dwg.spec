@@ -1987,16 +1987,16 @@ DWG_ENTITY(LEADER)
   //SUBCLASS (AcDbCurve)
   SUBCLASS (AcDbLeader)
   FIELD_B (unknown_bit_1, 0);
-  FIELD_BS (annot_type, 0);
-  FIELD_BS (path_type, 0);
-  FIELD_BL (numpts, 0);
+  FIELD_BS (path_type, 72);
+  FIELD_BS (annot_type, 73); //0: text, 1: tol, 2: insert, 3 (def): none
+  FIELD_BL (numpts, 76);
   FIELD_3DPOINT_VECTOR (points, numpts, 10);
   FIELD_3DPOINT (origin, 0);
   FIELD_3DPOINT (extrusion, 210);
   FIELD_3DPOINT (x_direction, 211);
   FIELD_3DPOINT (offset_to_block_ins_pt, 212);
 
-  SINCE(R_14) {
+  VERSIONS(R_14, R_2007) {
     FIELD_3DPOINT (endptproj, 0);
   }
   VERSIONS(R_13, R_14) {
@@ -2005,37 +2005,32 @@ DWG_ENTITY(LEADER)
 
   FIELD_BD (box_height, 40);
   FIELD_BD (box_width , 41);
-  FIELD_B (hooklineonxdir, 0);
-  FIELD_B (arrowhead_on, 0);
+  FIELD_B (hookline_dir, 74);
+  FIELD_B (arrowhead_on, 71);
+  FIELD_BS (arrowhead_type, 0);
 
   VERSIONS(R_13, R_14)
     {
-      FIELD_BS (arrowhead_type, 0);
       FIELD_BD (dimasz, 0);
       FIELD_B (unknown_bit_2, 0);
       FIELD_B (unknown_bit_3, 0);
       FIELD_BS (unknown_short_1, 0);
-      FIELD_BS (byblock_color, 0);
-      FIELD_B (unknown_bit_4, 0);
+      FIELD_BS (byblock_color, 77);
+      FIELD_B (hookline_on, 75);
       FIELD_B (unknown_bit_5, 0);
     }
 
   SINCE(R_2000)
     {
-      FIELD_BS (unknown_short_1, 0);
-      FIELD_B (unknown_bit_4, 0);
+      FIELD_B (hookline_on, 75);
       FIELD_B (unknown_bit_5, 0);
     }
 
   COMMON_ENTITY_HANDLE_DATA;
 
-  //FIXME reading these handles lead to a segfault
-  //TODO check if field is present in R_13.
-  //Juca thinks it is present but inactive/not used.
-  SINCE(R_13) { // TODO until 2007?
+  SINCE(R_13) {
     FIELD_HANDLE (associated_annotation, 2, 340);
   }
-  //UNTIL(R_2007) // TODO until 2007?
   {
     FIELD_HANDLE (dimstyle, 5, 2);
   }
@@ -4066,7 +4061,7 @@ DWG_OBJECT(FIELD)
   //DEBUG_HERE_OBJ
   FIELD_T (evaluation_error_msg, 300);
   Table_Value(value)
-  if (error)
+  if (error & DWG_ERR_INVALIDTYPE)
     return error;
 
   FIELD_T (value_string, 301); // and 9 for subsequent >255 chunks
@@ -4077,7 +4072,7 @@ DWG_OBJECT(FIELD)
     {
       FIELD_T (childval[rcount1].key, 6);
       Table_Value(childval[rcount1].value)
-      if (error)
+      if (error & DWG_ERR_INVALIDTYPE)
         {
           END_REPEAT(childval)
           return error;
@@ -4334,7 +4329,7 @@ DWG_OBJECT(TABLECONTENT)
             {
               FIELD_T (cell.customdata_items[rcount3].name, 300);
               Table_Value(cell.customdata_items[rcount3].value);
-              if (error)
+              if (error & DWG_ERR_INVALIDTYPE)
                 {
                   END_REPEAT(cell.customdata_items)
                   END_REPEAT(row.cells)
@@ -4362,7 +4357,7 @@ DWG_OBJECT(TABLECONTENT)
                 {
                   // 20.4.99 Value, page 241
                   Table_Value(content.value)
-                  if (error)
+                  if (error & DWG_ERR_INVALIDTYPE)
                     {
                       END_REPEAT(cell.cell_contents)
                       END_REPEAT(row.cells)
@@ -4431,7 +4426,7 @@ DWG_OBJECT(TABLECONTENT)
         {
           FIELD_T (row.customdata_items[rcount3].name, 300);
           Table_Value(row.customdata_items[rcount3].value);
-          if (error)
+          if (error & DWG_ERR_INVALIDTYPE)
             {
               END_REPEAT(row.customdata_items)
               END_REPEAT(tdata.rows)
@@ -4693,7 +4688,7 @@ DWG_ENTITY(TABLE)
 
               // 20.4.99 Value, page 241
               Table_Value(cells[rcount1].value)
-              if (error)
+              if (error & DWG_ERR_INVALIDTYPE)
                 {
                   END_REPEAT(cells);
                   return error;
@@ -5915,7 +5910,6 @@ DWG_ENTITY(HELIX)
 
   if (FIELD_VALUE(scenario) & 1) {
     FIELD_VECTOR(knots, BD, num_knots, 40)
-    END_REPEAT(knots);
     REPEAT(num_ctrl_pts, ctrl_pts, Dwg_SPLINE_control_point)
       {
         FIELD_3BD (ctrl_pts[rcount1], 10);

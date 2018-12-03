@@ -749,7 +749,7 @@ get_first_owned_object(const Dwg_Object *hdr)
 
   if (R_13 <= version && version <= R_2000)
     {
-      return _hdr->first_entity->obj;
+      return _hdr->first_entity ? _hdr->first_entity->obj : NULL;
     }
 
   if (version >= R_2004)

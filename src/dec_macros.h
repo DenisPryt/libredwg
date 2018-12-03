@@ -383,19 +383,19 @@
 
 //check for overflow into next object (invalid num_elems)
 #define AVAIL_BITS() \
-  (obj ? (int64_t)((obj->address + obj->size)*8 - bit_position(dat) + 20) \
-       : 0xff00ULL)
+  (obj ? (long long)((long long)(obj->address + obj->size)*8 - bit_position(dat) + 20) \
+       : 0xff00LL)
 #define TYPE_MAXELEMSIZE(type) (unsigned)dwg_bits_size[BITS_##type]
 #define VECTOR_CHKCOUNT(name,type,size) \
-  if ((int64_t)((size)*TYPE_MAXELEMSIZE(type)) > AVAIL_BITS()) { \
-    LOG_ERROR("Invalid " #name " size %ld. Need min. %u bits for " #type ", have %ld for %s.", \
-              (long)(size), (size)*TYPE_MAXELEMSIZE(type), AVAIL_BITS(), \
+  if ((long long)((size)*TYPE_MAXELEMSIZE(type)) > AVAIL_BITS()) { \
+    LOG_ERROR("Invalid " #name " size %lld. Need min. %u bits for " #type ", have %lld for %s.", \
+              (long long)(size), (unsigned)(size)*TYPE_MAXELEMSIZE(type), AVAIL_BITS(), \
               obj && obj->dxfname ? obj->dxfname:""); \
     return DWG_ERR_VALUEOUTOFBOUNDS; }
 #define _VECTOR_CHKCOUNT(name,size,maxelemsize) \
-  if ((int64_t)(size)*(maxelemsize) > AVAIL_BITS()) { \
-    LOG_ERROR("Invalid " #name " size %ld. Need min. %u bits, have %ld for %s.", \
-              (long)(size), (unsigned)(size)*(maxelemsize), AVAIL_BITS(), \
+  if ((long long)(size)*(maxelemsize) > AVAIL_BITS()) { \
+    LOG_ERROR("Invalid " #name " size %lld. Need min. %u bits, have %lld for %s.", \
+              (long long)(size), (unsigned)(size)*(maxelemsize), AVAIL_BITS(), \
               obj && obj->dxfname ? obj->dxfname:""); \
     size = 0; \
     return DWG_ERR_VALUEOUTOFBOUNDS; }
@@ -527,7 +527,7 @@
 #define REACTORS(code) \
   if (obj->tio.object->num_reactors > 0) \
     { \
-      _VECTOR_CHKCOUNT(reactors, obj->tio.object->num_reactors, sizeof(BITCODE_H) * 8) \
+      VECTOR_CHKCOUNT(reactors, HANDLE, obj->tio.object->num_reactors) \
       obj->tio.object->reactors = calloc(obj->tio.object->num_reactors, sizeof(BITCODE_H)); \
       for (vcount=0; vcount < obj->tio.object->num_reactors; vcount++) \
         {\
@@ -538,7 +538,7 @@
 #define ENT_REACTORS(code) \
   if (_ent->num_reactors > 0) \
     { \
-      _VECTOR_CHKCOUNT(reactors, _ent->num_reactors, sizeof(BITCODE_H) * 8) \
+      VECTOR_CHKCOUNT(reactors, HANDLE, _ent->num_reactors) \
       _ent->reactors = calloc(_ent->num_reactors, sizeof(BITCODE_H)); \
       for (vcount=0; vcount < _ent->num_reactors; vcount++) \
         { \
@@ -610,9 +610,9 @@
     LOG_ERROR("Invalid " #name " in %s. No bytes left.\n", obj->dxfname); \
     return DWG_ERR_VALUEOUTOFBOUNDS; \
   } \
-  LOG_INSANE("REPEAT_CHKCOUNT %s." #name " x %ld: %ld > %ld?\n", \
-    obj->dxfname, (long)times, (long)((times)*sizeof(type)), AVAIL_BITS()); \
-  if (dat->version >= R_2004 && (long)((times)*sizeof(type)) > AVAIL_BITS()) { \
+  LOG_INSANE("REPEAT_CHKCOUNT %s." #name " x %ld: %lld > %lld?\n", \
+    obj->dxfname, (long)times, (long long)((times)*sizeof(type)), AVAIL_BITS()); \
+  if (dat->version >= R_2004 && (long long)((times)*sizeof(type)) > AVAIL_BITS()) { \
     LOG_ERROR("Invalid %s." #name " x %ld\n", obj->dxfname, (long)times); \
     return DWG_ERR_VALUEOUTOFBOUNDS; }
 #define REPEAT_CHKCOUNT_LVAL(name,times,type) \
@@ -621,9 +621,9 @@
     times = 0; \
     return DWG_ERR_VALUEOUTOFBOUNDS; \
   } \
-  LOG_INSANE("REPEAT_CHKCOUNT_LVAL %s." #name " x %ld: %ld > %ld?\n", \
-    obj->dxfname, (long)times, (long)((times)*sizeof(type)), AVAIL_BITS()); \
-  if (dat->version >= R_2004 && (long)((times)*sizeof(type)) > AVAIL_BITS()) { \
+  LOG_INSANE("REPEAT_CHKCOUNT_LVAL %s." #name " x %ld: %lld > %lld?\n", \
+    obj->dxfname, (long)times, (long long)((times)*sizeof(type)), AVAIL_BITS()); \
+  if (dat->version >= R_2004 && (long long)((times)*sizeof(type)) > AVAIL_BITS()) { \
     LOG_ERROR("Invalid %s." #name " x %ld\n", obj->dxfname, (long)times); \
     times = 0; \
     return DWG_ERR_VALUEOUTOFBOUNDS; }
@@ -692,14 +692,15 @@ EXPORT int dwg_add_##token (Dwg_Object *obj) \
 } \
 \
 static int dwg_decode_##token##_private (Bit_Chain *dat, Bit_Chain *str_dat, \
-                                             Dwg_Object *restrict obj); \
+                                         Dwg_Object *restrict obj); \
 \
 /**Call dwg_add_##token and write the fields from the bitstream dat to the entity or object. */ \
 static int dwg_decode_##token (Bit_Chain *restrict dat, Dwg_Object *restrict obj) \
 { \
   Bit_Chain* str_dat; \
   int error = dwg_add_##token(obj); \
-  if (error) return error; \
+  if (error) \
+    return error; \
 \
   if (dat->version >= R_2007) { \
     str_dat = calloc(1, sizeof(Bit_Chain)); /* separate string buffer */ \
@@ -708,16 +709,13 @@ static int dwg_decode_##token (Bit_Chain *restrict dat, Dwg_Object *restrict obj
   } else { \
     str_dat = dat; \
   } \
-\
   error = dwg_decode_##token##_private (dat, str_dat, obj); \
-\
   if (dat->version >= R_2007) { \
     free(str_dat); \
   } \
   return error; \
 } \
 \
-/**Call dwg_add_##token and write the fields from the bitstream dat to the entity or object. */ \
 static int dwg_decode_##token##_private (Bit_Chain *dat, Bit_Chain *str_dat, \
                                          Dwg_Object *restrict obj) \
 { \
@@ -741,6 +739,7 @@ static int dwg_decode_##token##_private (Bit_Chain *dat, Bit_Chain *str_dat, \
   } \
   if (error >= DWG_ERR_CRITICAL) return error;
 
+
 // Does size include the CRC?
 #define DWG_ENTITY_END \
   if (dat->version >= R_2007) { \
@@ -756,7 +755,7 @@ static int dwg_decode_##token##_private (Bit_Chain *dat, Bit_Chain *str_dat, \
 }
 
 #define DWG_OBJECT(token) \
-EXPORT int dwg_add_ ## token (Dwg_Object *obj) \
+EXPORT int dwg_add_##token (Dwg_Object *obj) \
 { \
   Dwg_Object_##token *_obj;\
   LOG_INFO("Add object " #token " ")\
@@ -772,15 +771,14 @@ EXPORT int dwg_add_ ## token (Dwg_Object *obj) \
   obj->tio.object->objid = obj->index; /* obj ptr itself might move */ \
   return 0; \
 } \
-\
-static int dwg_decode_ ## token ## _private (Bit_Chain *dat, Bit_Chain *str_dat, \
-                                             Dwg_Object *restrict obj); \
-\
-static int dwg_decode_ ## token (Bit_Chain *restrict dat, Dwg_Object *restrict obj) \
+static int dwg_decode_##token##_private (Bit_Chain *dat, Bit_Chain *str_dat, \
+                                         Dwg_Object *restrict obj); \
+static int dwg_decode_##token (Bit_Chain *restrict dat, Dwg_Object *restrict obj) \
 { \
   Bit_Chain* str_dat; \
   int error = dwg_add_##token(obj); \
-  if (error) return error; \
+  if (error) \
+    return error; \
 \
   if (dat->version >= R_2007) { \
     str_dat = calloc(1, sizeof(Bit_Chain)); /* separate string buffer */ \
@@ -788,17 +786,15 @@ static int dwg_decode_ ## token (Bit_Chain *restrict dat, Dwg_Object *restrict o
   } else { \
     str_dat = dat; \
   } \
-\
-  error = dwg_decode_ ## token ## _private (dat, str_dat, obj); \
-\
+  error = dwg_decode_##token##_private (dat, str_dat, obj); \
   if (dat->version >= R_2007) { \
     free(str_dat); \
   } \
   return error; \
 } \
 \
-static int dwg_decode_ ## token ## _private (Bit_Chain *dat, Bit_Chain *str_dat, \
-                                             Dwg_Object *restrict obj) \
+static int dwg_decode_##token##_private (Bit_Chain *dat, Bit_Chain *str_dat, \
+                                         Dwg_Object *restrict obj) \
 { \
   BITCODE_BL vcount, rcount1, rcount2, rcount3, rcount4; \
   int error; \
@@ -807,7 +803,8 @@ static int dwg_decode_ ## token ## _private (Bit_Chain *dat, Bit_Chain *str_dat,
   Bit_Chain* hdl_dat = dat; /* handle stream initially the same */ \
   LOG_INFO("Decode object " #token " ")\
   _obj = obj->tio.object->tio.token;\
-  error |= dwg_decode_object(dat, hdl_dat, str_dat, obj->tio.object); \
+  error = dwg_decode_object(dat, hdl_dat, str_dat, obj->tio.object); \
   if (error >= DWG_ERR_CRITICAL) return error;
+
 
 #define DWG_OBJECT_END DWG_ENTITY_END

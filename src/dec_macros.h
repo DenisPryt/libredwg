@@ -691,6 +691,9 @@ EXPORT int dwg_add_##token (Dwg_Object *obj) \
   return 0; \
 } \
 \
+static int dwg_decode_##token##_private (Bit_Chain *dat, Bit_Chain *str_dat, \
+                                             Dwg_Object *restrict obj); \
+\
 /**Call dwg_add_##token and write the fields from the bitstream dat to the entity or object. */ \
 static int dwg_decode_##token (Bit_Chain *restrict dat, Dwg_Object *restrict obj) \
 { \
@@ -769,6 +772,9 @@ EXPORT int dwg_add_ ## token (Dwg_Object *obj) \
   obj->tio.object->objid = obj->index; /* obj ptr itself might move */ \
   return 0; \
 } \
+\
+static int dwg_decode_ ## token ## _private (Bit_Chain *dat, Bit_Chain *str_dat, \
+                                             Dwg_Object *restrict obj); \
 \
 static int dwg_decode_ ## token (Bit_Chain *restrict dat, Dwg_Object *restrict obj) \
 { \

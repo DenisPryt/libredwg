@@ -2782,7 +2782,7 @@ dwg_decode_object(Bit_Chain* dat, Bit_Chain* hdl_dat, Bit_Chain* str_dat,
 static int
 dwg_decode_add_object_ref(Dwg_Data *restrict dwg, Dwg_Object_Ref *ref)
 {
-  const Dwg_Object_Ref **object_ref_old = dwg->object_ref;
+  Dwg_Object_Ref **object_ref_old = dwg->object_ref;
 
   // Reserve memory space for object references
   if (!dwg->num_object_refs)

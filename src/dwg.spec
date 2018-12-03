@@ -2639,7 +2639,7 @@ DWG_OBJECT(VIEW)
         {
           FIELD_HANDLE (base_ucs_handle, 5, 346);
           FIELD_HANDLE (named_ucs_handle, 5, 345);
-	}
+        }
     }
   SINCE(R_2007) {
     FIELD_HANDLE (live_section_handle, 4, 334);
@@ -3506,7 +3506,7 @@ DWG_ENTITY(HATCH)
                 }
             }
           SET_PARENT(paths[rcount1].segs, &_obj->paths[rcount1])
-		  END_REPEAT(paths[rcount1].segs);
+          END_REPEAT(paths[rcount1].segs);
         }
       else
         { /* POLYLINE PATH */
@@ -4105,8 +4105,8 @@ DWG_OBJECT(FIELD)
   //DEBUG_HERE_OBJ
   FIELD_T (evaluation_error_msg, 300);
   Table_Value(value)
-  if (error & ~DWG_ERR_INVALIDTYPE)
-    return DWG_ERR_INVALIDTYPE;
+  if (error)
+    return error;
 
   FIELD_T (value_string, 301); // and 9 for subsequent >255 chunks
   FIELD_BL (value_string_length, 98); //ODA bug TV
@@ -4116,10 +4116,10 @@ DWG_OBJECT(FIELD)
     {
       FIELD_T (childval[rcount1].key, 6);
       Table_Value(childval[rcount1].value)
-      if (error & ~DWG_ERR_INVALIDTYPE)
+      if (error)
         {
-          END_REPEAT(childval)   
-          return DWG_ERR_INVALIDTYPE;
+          END_REPEAT(childval)
+          return error;
         }
     }
   SET_PARENT_OBJ(childval)
@@ -4373,12 +4373,12 @@ DWG_OBJECT(TABLECONTENT)
             {
               FIELD_T (cell.customdata_items[rcount3].name, 300);
               Table_Value(cell.customdata_items[rcount3].value);
-              if (error & ~DWG_ERR_INVALIDTYPE)
+              if (error)
                 {
                   END_REPEAT(cell.customdata_items)
                   END_REPEAT(row.cells)
                   END_REPEAT(tdata.rows)
-                  return DWG_ERR_INVALIDTYPE;
+                  return error;
                 }
             }
           SET_PARENT_FIELD(cell.customdata_items, cell_parent, &_obj->cell)
@@ -4401,12 +4401,12 @@ DWG_OBJECT(TABLECONTENT)
                 {
                   // 20.4.99 Value, page 241
                   Table_Value(content.value)
-                  if (error & ~DWG_ERR_INVALIDTYPE)
+                  if (error)
                     {
                       END_REPEAT(cell.cell_contents)
                       END_REPEAT(row.cells)
                       END_REPEAT(tdata.rows)
-                      return DWG_ERR_INVALIDTYPE;
+                      return error;
                     }
                 }
               else if (FIELD_VALUE(content.type) == 2) { // Field
@@ -4470,11 +4470,11 @@ DWG_OBJECT(TABLECONTENT)
         {
           FIELD_T (row.customdata_items[rcount3].name, 300);
           Table_Value(row.customdata_items[rcount3].value);
-          if (error & ~DWG_ERR_INVALIDTYPE)
+          if (error)
             {
               END_REPEAT(row.customdata_items)
               END_REPEAT(tdata.rows)
-              return DWG_ERR_INVALIDTYPE;
+              return error;
             }
         }
       SET_PARENT_FIELD(row.customdata_items, row_parent, &_obj->row)
@@ -4732,10 +4732,10 @@ DWG_ENTITY(TABLE)
 
               // 20.4.99 Value, page 241
               Table_Value(cells[rcount1].value)
-              if (error & ~DWG_ERR_INVALIDTYPE)
+              if (error)
                 {
                   END_REPEAT(cells);
-                  return DWG_ERR_INVALIDTYPE;
+                  return error;
                 }
             }
         }

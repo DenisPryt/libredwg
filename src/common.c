@@ -143,11 +143,11 @@ const char *dwg_bits_name[] =
   "FIELD_ChildValue",
   "GEODATA_meshpt",
   "GEODATA_meshface",
-  "Leader",
-  "Leader_Break",
-  "Leader_Line",
-  "Leader_ArrowHead",
-  "Leader_BlockLabel",
+  "LEADER",
+  "LEADER_Break",
+  "LEADER_Line",
+  "LEADER_ArrowHead",
+  "LEADER_BlockLabel",
   "2RD",
 };
 

@@ -291,7 +291,7 @@ dxf_read_file(const char *restrict filename, Dwg_Data *restrict dwg)
     error = dwg_read_dxfb(&dat, dwg);
   else
     error = dwg_read_dxf(&dat, dwg);
-  
+
   if (error >= DWG_ERR_CRITICAL)
     {
       LOG_ERROR("Failed to decode DXF file: %s\n", filename)
@@ -335,7 +335,7 @@ dwg_write_file(const char *restrict filename, const Dwg_Data *restrict dwg)
       }
       return error;
     }
- 
+
   // try opening the output file in write mode
   if (!stat (filename, &attrib))
     {
@@ -369,7 +369,7 @@ dwg_write_file(const char *restrict filename, const Dwg_Data *restrict dwg)
 
   return error;
 }
-#endif /* USE_WRITE */ 
+#endif /* USE_WRITE */
 
 /* THUMBNAIL IMAGE DATA (R13C3+) */
 unsigned char *
@@ -401,7 +401,7 @@ dwg_bmp(const Dwg_Data *restrict dwg, BITCODE_RL *restrict size)
       env_var_checked_p = true;
     }
 #endif  /* USE_TRACING */
-  
+
   osize = bit_read_RL(dat); /* overall size of all images */
   LOG_TRACE("overall size: " FORMAT_RL "\n", osize)
   num_pictures = bit_read_RC(dat);

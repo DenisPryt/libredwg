@@ -17,6 +17,7 @@
  * modified by Rodrigo Rodrigues da Silva
  * modified by Till Heuschmann
  * modified by Reini Urban
+ * modified by Denis Pruchkovksy
  */
 
 #include "spec.h"
@@ -1592,13 +1593,13 @@ static int decode_3dsolid(Bit_Chain* dat, Bit_Chain* hdl_dat,
         }
       // version 2, the binary, unencrypted SAT format for ACIS 7.0/ShapeManager.
       /* ACIS versions:
-         R14 release	        106   (ACIS 1.6)
-         R15 (2000) release	400   (ACIS 4.0)
-         R18 (2004) release	20800 (ASM ShapeManager, forked from ACIS 7.0)
-         R21 (2007) release	21200
-         R24 (2010) release	21500
-         R27 (2013) release	21800
-         R?? (2018) release	223.0.1.1930
+         R14 release            106   (ACIS 1.6)
+         R15 (2000) release     400   (ACIS 4.0)
+         R18 (2004) release     20800 (ASM ShapeManager, forked from ACIS 7.0)
+         R21 (2007) release     21200
+         R24 (2010) release     21500
+         R27 (2013) release     21800
+         R?? (2018) release     223.0.1.1930
        */
       else //if (FIELD_VALUE(version)==2)
         {
@@ -2129,6 +2130,11 @@ DWG_OBJECT(BLOCK_HEADER)
     FIELD_RC (flag2, 0);
     FIELD_CAST (num_inserts, RS, RL, 0);
     FIELD_RS (flag3, 0);
+
+    FIELD_VALUE(anonymous)    = FIELD_VALUE(flag) & 1;
+    FIELD_VALUE(hasattrs)     = FIELD_VALUE(flag) & 2;
+    FIELD_VALUE(blkisxref)    = FIELD_VALUE(flag) & 4;
+    FIELD_VALUE(xrefoverlaid) = FIELD_VALUE(flag) & 8;
   }
   SINCE(R_13) {
     FIELD_B (anonymous, 0); // bit 1
@@ -2247,6 +2253,11 @@ DWG_OBJECT(LAYER)
   {
     FIELD_RS (color_rs, 62);     // color
     FIELD_RS (linetype_rs, 7);   // style
+
+    FIELD_VALUE(on)            = FIELD_VALUE(color_rs) >= 0;
+    FIELD_VALUE(frozen)        = FIELD_VALUE(flag) & 1;
+    FIELD_VALUE(frozen_in_new) = FIELD_VALUE(flag) & 2;
+    FIELD_VALUE(locked)        = FIELD_VALUE(flag) & 4;
   }
   VERSIONS(R_13, R_14)
   {
@@ -2333,6 +2344,9 @@ DWG_OBJECT(STYLE)
     FIELD_RC (generation, 71);
     FIELD_RD (last_height, 42);
     FIELD_TF (font_name, 128, 3);
+
+    FIELD_VALUE(shape_file) = FIELD_VALUE(flag) & 4;
+    FIELD_VALUE(vertical)   = FIELD_VALUE(flag) & 1;
   }
   LATER_VERSIONS
   {
@@ -2381,11 +2395,7 @@ DWG_OBJECT_END
 /*(56)*/
 DWG_OBJECT(LTYPE_CONTROL)
 
-  //DXF {
-  //  VALUE_RL (FIELD_VALUE(num_entries)-2, 70);
-  //} else {
-    FIELD_BS (num_entries, 70);
-  //}
+  FIELD_BS (num_entries, 70);
 
   START_HANDLE_STREAM;
   FIELD_HANDLE (null_handle, 4, 0);
@@ -3156,7 +3166,7 @@ DWG_OBJECT(DIMSTYLE)
 
   SINCE(R_2000)
     {
-      FIELD_HANDLE (DIMLDRBLK, 5, 341); /* Leader arrow	(DIMLDRBLK)*/
+      FIELD_HANDLE (DIMLDRBLK, 5, 341); /* Leader arrow (DIMLDRBLK)*/
       FIELD_HANDLE (DIMBLK, 5, 342);  /* Arrow */
       FIELD_HANDLE (DIMBLK1, 5, 343); /* Arrow 1 */
       FIELD_HANDLE (DIMBLK2, 5, 344); /* Arrow 2 */
@@ -3541,8 +3551,7 @@ DWG_ENTITY(IMAGE)
   FIELD_3DPOINT (pt0, 10);
   FIELD_3DPOINT (uvec, 11);
   FIELD_3DPOINT (vvec, 12);
-  FIELD_RD (size.width, 13);
-  FIELD_RD (size.height, 23);
+  FIELD_2RD (size, 13);
   FIELD_BS (display_props, 70);
   FIELD_B (clipping, 280);
   FIELD_RC (brightness, 281);
@@ -5107,7 +5116,7 @@ DWG_ENTITY(MULTILEADER)
     return DWG_ERR_VALUEOUTOFBOUNDS;
   }
   DXF { VALUE_TFF ("LEADER{", 302); }
-  REPEAT(ctx.num_leaders, ctx.leaders, Dwg_Leader)
+  REPEAT(ctx.num_leaders, ctx.leaders, Dwg_LEADER)
     {
       #define lnode ctx.leaders[rcount1]
       FIELD_B (lnode.has_lastleaderlinepoint, 290);
@@ -5121,24 +5130,24 @@ DWG_ENTITY(MULTILEADER)
           FIELD_3BD (lnode.dogleg_vector, 11);
         }
       FIELD_BL (lnode.num_breaks, 0);
-      REPEAT2(lnode.num_breaks, lnode.breaks, Dwg_Leader_Break)
+      REPEAT2(lnode.num_breaks, lnode.breaks, Dwg_LEADER_Break)
         {
           FIELD_3BD (lnode.breaks[rcount2].start, 11);
           FIELD_3BD (lnode.breaks[rcount2].end, 12);
         }
-      SET_PARENT(lnode.breaks, (struct _dwg_Leader_Line *)&_obj->lnode);
+      SET_PARENT(lnode.breaks, (struct _dwg_LEADER_Line *)&_obj->lnode);
       END_REPEAT(lnode.breaks);
       FIELD_BL (lnode.branch_index, 90);
       FIELD_BD (lnode.dogleg_length, 40);
       DXF { VALUE_TFF ("LEADER_LINE{", 304); }
       FIELD_BL (lnode.num_lines, 0);
-      REPEAT2 (lnode.num_lines, lnode.lines, Dwg_Leader_Line)
+      REPEAT2 (lnode.num_lines, lnode.lines, Dwg_LEADER_Line)
         {
           #define lline lnode.lines[rcount2]
           FIELD_BL (lline.numpts, 0);
           FIELD_3DPOINT_VECTOR (lline.points, lline.numpts, 10);
           FIELD_BL (lline.num_breaks, 0);
-          REPEAT3 (lline.num_breaks, lline.breaks, Dwg_Leader_Break)
+          REPEAT3 (lline.num_breaks, lline.breaks, Dwg_LEADER_Break)
             {
               FIELD_3BD (lline.breaks[rcount3].start, 11);
               FIELD_3BD (lline.breaks[rcount3].end, 12);
@@ -5236,7 +5245,7 @@ DWG_ENTITY(MULTILEADER)
       FIELD_BS (ctx.text_bottom, 272);
     }
   DXF { VALUE_TFF ("}", 301); } //end CONTEXT_DATA
-  // END MLeaderAnnotContext
+  // END MLEADER_AnnotContext
 
   FIELD_BL (flags, 90); // override flags
   FIELD_BS (type, 170);
@@ -5262,7 +5271,7 @@ DWG_ENTITY(MULTILEADER)
   VERSIONS (R_2000, R_2007)
     {
       FIELD_BL (num_arrowheads, 0);
-      REPEAT(num_arrowheads, arrowheads, Dwg_Leader_ArrowHead)
+      REPEAT(num_arrowheads, arrowheads, Dwg_LEADER_ArrowHead)
         {
           FIELD_BL (arrowheads->is_default, 94);
           FIELD_HANDLE (arrowheads->arrowhead, 5, 345);
@@ -5270,7 +5279,7 @@ DWG_ENTITY(MULTILEADER)
       SET_PARENT_OBJ(arrowheads)
       END_REPEAT(arrowheads);
       FIELD_BL (num_blocklabels, 0);
-      REPEAT(num_blocklabels, blocklabels, Dwg_Leader_BlockLabel)
+      REPEAT(num_blocklabels, blocklabels, Dwg_LEADER_BlockLabel)
         {
           FIELD_HANDLE (blocklabels->attdef, 4, 330);
           FIELD_T (blocklabels->label_text, 302);
@@ -5297,10 +5306,10 @@ DWG_ENTITY(MULTILEADER)
 
   COMMON_ENTITY_HANDLE_DATA;
   // wrong documentation in the ODA. the handles are at the end.
-  _REPEAT_N(_obj->ctx.num_leaders, ctx.leaders, Dwg_Leader, 1)
+  _REPEAT_N(_obj->ctx.num_leaders, ctx.leaders, Dwg_LEADER, 1)
     {
       #define lnode ctx.leaders[rcount1]
-      _REPEAT_N(_obj->lnode.num_lines, lnode.lines, Dwg_Leader_Line, 2)
+      _REPEAT_N(_obj->lnode.num_lines, lnode.lines, Dwg_LEADER_Line, 2)
         {
           #define lline lnode.lines[rcount2]
           FIELD_HANDLE (lline.ltype, 5, 340);
@@ -5416,8 +5425,7 @@ DWG_ENTITY(WIPEOUT)
   FIELD_3DPOINT (pt0, 10);
   FIELD_3DPOINT (uvec, 11);
   FIELD_3DPOINT (vvec, 12);
-  FIELD_RD (size.width, 13);
-  FIELD_RD (size.height, 23);
+  FIELD_2RD (size, 13);
   FIELD_BS (display_props, 70);
   FIELD_B (clipping, 280);
   FIELD_RC (brightness, 281);
@@ -6165,20 +6173,20 @@ DWG_OBJECT(PLOTSETTINGS)
   FIELD_BD (num_custom_print_scale, 142); // in paper units
   FIELD_BD (den_custom_print_scale, 143); // in drawing units
   FIELD_BS (plot_layout, 70); /*!< plot layout flag:
-				1 = PlotViewportBorders
-				2 = ShowPlotStyles
-				4 = PlotCentered
-				8 = PlotHidden
-				16 = UseStandardScale
-				32 = PlotPlotStyles
-				64 = ScaleLineweights
-				128 = PrintLineweights
-				512 = DrawViewportsFirst
-				1024 = ModelType
-				2048 = UpdatePaper
-				4096 = ZoomToPaperOnUpdate
-				8192 = Initializing
-				16384 = PrevPlotInit */
+                                1 = PlotViewportBorders
+                                2 = ShowPlotStyles
+                                4 = PlotCentered
+                                8 = PlotHidden
+                                16 = UseStandardScale
+                                32 = PlotPlotStyles
+                                64 = ScaleLineweights
+                                128 = PrintLineweights
+                                512 = DrawViewportsFirst
+                                1024 = ModelType
+                                2048 = UpdatePaper
+                                4096 = ZoomToPaperOnUpdate
+                                8192 = Initializing
+                                16384 = PrevPlotInit */
   FIELD_BS (plot_paper_units, 72); /*!< 0 inches, 1 mm, 2 pixel */
   FIELD_BS (plot_rotation, 73);    /*!< 0 normal, 1 90, 2 180, 3 270 deg */
   FIELD_BS (plot_type, 74);    /*!< 0 display, 1 extents, 2 limits, 3 view (see DXF 6),

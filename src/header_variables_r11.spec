@@ -60,10 +60,13 @@
   FIELD_RD (FILLETRAD, 40); //ok
   FIELD_RS (AUNITS, 70);    //ok
   FIELD_RS (AUPREC, 70);    //ok
-  DEBUG_HERE//@18e
+  //DEBUG_HERE//@18e
+  FIELD_RS (OSMODE, 70);    //registry?
+  // 05000000 01004143 41440043 41440000
   //RC 0
   //RS 25
-  dat->byte = 0x192;
+  FIELD_CAST (unknown_12, RS, BL, 70); //??
+  //DEBUG_POS; dat->byte = 0x192; DEBUG_POS
   FIELD_RS (ATTMODE, 70);
   FIELD_TF (MENU, 15, 1);
   FIELD_RD (DIMSCALE, 40); //ok 0x1a3
@@ -92,8 +95,8 @@
 
   //the names?
   dat->byte = 0x229;
-  FIELD_RD (ELEVATION, 40); //ok 
-  FIELD_RD (THICKNESS, 40); //ok 
+  FIELD_RD (ELEVATION, 40); //ok
+  FIELD_RD (THICKNESS, 40); //ok
   DEBUG_HERE //239
 
   dat->byte = 0x2e5;
@@ -186,7 +189,7 @@
   FIELD_3RD (UCSXDIR, 11); //ok
   FIELD_3RD (UCSYDIR, 12); //ok
   DEBUG_HERE //443
-  
+
   dat->byte = 0x47d;
   FIELD_RC (DIMTOFL, 70); //ok
   DEBUG_HERE //47e
@@ -227,7 +230,7 @@
   FIELD_RS (SHADEDIF, 70); //ok
   FIELD_RS (UNITMODE, 70); //ok
   DEBUG_HERE //53d
-  
+
   dat->byte = 0x5df;
   FIELD_RD (DIMTFAC, 40); //ok
   FIELD_3RD (PUCSORG, 10); //ok
@@ -247,6 +250,6 @@
   dat->byte = 0x6a9;
   FIELD_RS (MAXACTVP, 70); //ok
   FIELD_RD (DIMGAP, 40);   //ok
-  FIELD_RD (PELEVATION, 40); //ok 
+  FIELD_RD (PELEVATION, 40); //ok
   FIELD_CAST (VISRETAIN, RS, B, 70); //ok
   FIELD_RS (crc, 0); // 0x6bd

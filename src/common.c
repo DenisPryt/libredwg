@@ -212,11 +212,11 @@ const unsigned char dwg_bits_size[] =
   6, //BITS_Dwg_FIELD_ChildValue (T BL BL),
   256, //BITS_Dwg_GEODATA_meshpt (2RD 2RD),
   8, //BITS_Dwg_GEODATA_meshface (BL BL BL BL),
-  10, //BITS_Dwg_Leader (B B BL BL BD BL ),
-  12, //BITS_Dwg_Leader_Break (3BD 3BD),
-  6, //BITS_Dwg_Leader_Line (BL BL BL),
-  10, //BITS_Dwg_Leader_ArrowHead (BL HANDLE),
-  14, //BITS_Dwg_Leader_BlockLabel (HANDLE T BS BD),
+  10, //BITS_Dwg_LEADER (B B BL BL BD BL ),
+  12, //BITS_Dwg_LEADER_Break (3BD 3BD),
+  6, //BITS_Dwg_LEADER_Line (BL BL BL),
+  10, //BITS_Dwg_LEADER_ArrowHead (BL HANDLE),
+  14, //BITS_Dwg_LEADER_BlockLabel (HANDLE T BS BD),
   128, //BITCODE_2RD (2RD),
 };
 
